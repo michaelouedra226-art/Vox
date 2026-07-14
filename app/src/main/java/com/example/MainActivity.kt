@@ -19,6 +19,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -450,6 +451,7 @@ fun VoxGeminiDashboard(
     }
 
     var showApiKey by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     val isKeyNotEmpty = apiKey.trim().isNotEmpty()
     val isApiKeyError = isKeyNotEmpty && !isApiKeyValid
     var lastBackPressTime by remember { mutableStateOf(0L) }
@@ -514,12 +516,139 @@ fun VoxGeminiDashboard(
                     )
                 )
             }
-            IconButton(onClick = { /* No-op settings icon for aesthetics */ }) {
+            IconButton(onClick = { showSettingsDialog = true }) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Paramètres",
                     tint = Color(0xFF49454F)
                 )
+            }
+        }
+
+        // Settings Dialog for API parameters
+        if (showSettingsDialog) {
+            AlertDialog(
+                onDismissRequest = { showSettingsDialog = false },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
+                            tint = Color(0xFF6750A4)
+                        )
+                        Text(
+                            text = "Paramètres de l'API",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Entrez votre clé API Google AI Studio pour activer la synthèse vocale ultra-réaliste.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF49454F)
+                        )
+                        OutlinedTextField(
+                            value = apiKey,
+                            onValueChange = { viewModel.saveApiKey(it) },
+                            placeholder = { Text("Clé API (AIzaSy...)") },
+                            singleLine = true,
+                            isError = isApiKeyError,
+                            supportingText = {
+                                if (isApiKeyError) {
+                                    Text(
+                                        text = "Format invalide (doit commencer par 'AIzaSy' et faire 39 caractères)",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                } else {
+                                    Text(
+                                        text = "La clé est sauvegardée localement de manière sécurisée.",
+                                        color = Color(0xFF49454F).copy(alpha = 0.7f),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("api_key_input"),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF6750A4),
+                                unfocusedBorderColor = Color(0xFF79747E),
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedTextColor = Color(0xFF1C1B1F),
+                                unfocusedTextColor = Color(0xFF1C1B1F),
+                                errorBorderColor = MaterialTheme.colorScheme.error,
+                                errorLabelColor = MaterialTheme.colorScheme.error,
+                                errorSupportingTextColor = MaterialTheme.colorScheme.error
+                            ),
+                            visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            trailingIcon = {
+                                IconButton(onClick = { showApiKey = !showApiKey }) {
+                                    Icon(
+                                        imageVector = if (showApiKey) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = if (showApiKey) "Masquer" else "Afficher",
+                                        tint = if (isApiKeyError) MaterialTheme.colorScheme.error else Color(0xFF6750A4)
+                                    )
+                                }
+                            }
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSettingsDialog = false }) {
+                        Text(
+                            text = "Fermer",
+                            color = Color(0xFF6750A4),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                containerColor = Color(0xFFFEF7FF),
+                shape = RoundedCornerShape(28.dp)
+            )
+        }
+
+        // Warning banner when API Key is missing or invalid
+        if (!isApiKeyValid) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clickable { showSettingsDialog = true }
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(
+                        text = "Clé API non configurée ou invalide. Touchez ici pour la configurer.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 
@@ -532,71 +661,6 @@ fun VoxGeminiDashboard(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Section 1: API Config
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "Clé API Google AI Studio",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color(0xFF49454F),
-                        fontWeight = FontWeight.Medium
-                    ),
-                    modifier = Modifier.padding(start = 4.dp)
-                )
-                OutlinedTextField(
-                    value = apiKey,
-                    onValueChange = { viewModel.saveApiKey(it) },
-                    placeholder = { Text("Entrez votre clé API Google AI Studio (AIzaSy...)") },
-                    singleLine = true,
-                    isError = isApiKeyError,
-                    supportingText = {
-                        if (isApiKeyError) {
-                            Text(
-                                text = "Format invalide (doit commencer par 'AIzaSy' et faire 39 caractères)",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        } else {
-                            Text(
-                                text = "La clé est sauvegardée localement de manière sécurisée.",
-                                color = Color(0xFF49454F).copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("api_key_input"),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF6750A4),
-                        unfocusedBorderColor = Color(0xFF79747E),
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedTextColor = Color(0xFF1C1B1F),
-                        unfocusedTextColor = Color(0xFF1C1B1F),
-                        errorBorderColor = MaterialTheme.colorScheme.error,
-                        errorLabelColor = MaterialTheme.colorScheme.error,
-                        errorSupportingTextColor = MaterialTheme.colorScheme.error
-                    ),
-                    visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    trailingIcon = {
-                        IconButton(onClick = { showApiKey = !showApiKey }) {
-                            Icon(
-                                imageVector = if (showApiKey) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (showApiKey) "Masquer" else "Afficher",
-                                tint = if (isApiKeyError) MaterialTheme.colorScheme.error else Color(0xFF6750A4)
-                            )
-                        }
-                    }
-                )
-            }
-
             // Section 2: Input Text (Contenu à synthétiser)
             Column(
                 modifier = Modifier

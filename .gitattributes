@@ -1,0 +1,18 @@
+# Explicitly set default behavior to text.
+* text=auto
+
+# Declare files to always have LF line endings on checkout.
+*.sh text eol=lf
+gradlew text eol=lf
+
+# Declare files to always have CRLF line endings on checkout.
+*.bat text eol=crlf
+gradlew.bat text eol=crlf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary

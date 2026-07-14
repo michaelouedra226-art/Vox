@@ -20,6 +20,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Regenerate Gradle Wrapper
+      run: gradle wrapper
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 

@@ -20,8 +20,13 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Regenerate Gradle Wrapper
-      run: gradle wrapper
+    - name: Decode Debug Keystore
+      run: |
+        if [ -f debug.keystore.base64 ]; then
+          base64 -d debug.keystore.base64 > debug.keystore
+        else
+          echo "Warning: debug.keystore.base64 not found."
+        fi
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3

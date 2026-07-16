@@ -20,16 +20,13 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
-    - name: Regenerate Gradle Wrapper
-      run: gradle wrapper
-
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
     - name: Create .env file
       run: |
         touch .env
-        echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+        echo "GEMINI_API_KEY=" >> .env
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
